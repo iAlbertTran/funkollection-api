@@ -41,7 +41,7 @@ app.route('/api/funkopop/:name').get(( req, res ) => {
     });
 });
 
-api.route('/api/funkopop').post(( req, res ) => {
+app.route('/api/funkopop').post(( req, res ) => {
     res.send( 201, req.body );
 });
 
