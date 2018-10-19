@@ -20,14 +20,14 @@ app.route('/api/funkopop').get(( req, res ) => {
         vinyls: [
             {
                 name: 'Iron Man (Gold Chrome)',
-                series: 'POP! Marvel',
-                category: 'MS 10',
+                series: 'Marvel',
+                category: 'MS-10',
                 series_number: 375
             },
             {
                 name: 'Venomized Iron Man',
-                series: 'Pop! Marvel',
-                category: 'Marvel Venom',
+                series: 'Marvel',
+                category: 'Venom',
                 series_number: 365
             }
         ]
