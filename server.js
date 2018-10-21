@@ -4,9 +4,13 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 var corsOptions = {
-    origin: 'http://example.com',
+    origin: 'http://localhost:4200',
     optionsSuccessStatus: 200
 }
+
+var sqlite3 = require("sqlite3").verbose();  // use sqlite3
+var dbFile = "funkopop.db";
+var db = new sqlite3.Database(dbFile);  // new object, old DB
 
 app.use(cors(corsOptions));
 app.use( bodyParser.json() );
@@ -32,6 +36,19 @@ app.route('/api/funkopop').get(( req, res ) => {
             }
         ]
     });
+});
+
+app.route('/api/series').get(( req, res ) => {
+    db.all('SELECT * FROM popseries', function(err, rows){
+        if(err != null){
+            console.log(err);
+        }   else {
+            res.status(200);
+            res.type("application/json");
+            res.send(rows);
+        }
+    })
+
 });
 
 app.route('/api/funkopop/:name').get(( req, res ) => {
