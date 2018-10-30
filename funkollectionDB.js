@@ -1,5 +1,5 @@
 var sqlite3 = require("sqlite3").verbose();  // use sqlite
-var dbFile = "funkopop.db";
+var dbFile = "funkollection.db";
 
 // makes the object that represents the database in our code
 var db = new sqlite3.Database(dbFile);

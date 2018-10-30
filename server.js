@@ -9,7 +9,7 @@ var corsOptions = {
 }
 
 var sqlite3 = require("sqlite3").verbose();  // use sqlite3
-var dbFile = "funkopop.db";
+var dbFile = "funkollection.db";
 var db = new sqlite3.Database(dbFile);  // new object, old DB
 
 app.use(cors(corsOptions));
