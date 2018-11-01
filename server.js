@@ -69,3 +69,7 @@ app.route('/api/funkopop/:name').put(( req, res ) => {
 app.route('/api/funkopop/:name').delete(( req, res ) => {
     res.sendStatus(204);
 });
+
+app.route('/api/account/register').post(( req, res ) => {
+    res.sendStatus(204);
+});
