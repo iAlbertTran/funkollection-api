@@ -7,7 +7,7 @@ var db = new sqlite3.Database(dbFile);
 // If not, initialize it
 var createSeriesTable = "CREATE TABLE IF NOT EXISTS popseries (id INTEGER, name TEXT, PRIMARY KEY(id, name))";
 var createCategoryTable = "CREATE TABLE IF NOT EXISTS popcategory (id INTEGER, name TEXT, PRIMARY KEY(id, name))";
-var createUsersTable = "CREATE TABLE IF NOT EXISTS users (id INTEGER, username TEXT, email TEXT, salt TEXT, password TEXT, verified INTEGER, PRIMARY KEY(id, username, email))";
+var createUsersTable = "CREATE TABLE IF NOT EXISTS users (id INTEGER, username TEXT, email TEXT, first TEXT, last TEXT, salt TEXT, password TEXT, verified INTEGER, PRIMARY KEY(id, username, email))";
 var createFunkoPopTable = "CREATE TABLE IF NOT EXISTS funkopop (id INTEGER, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, PRIMARY KEY(id, name), FOREIGN KEY(category) REFERENCES popcategory(id) FOREIGN KEY(series) REFERENCES popseries(id))";
 var createUserFunkoPopTable = "CREATE TABLE IF NOT EXISTS usersfunkopops (id INTEGER PRIMARY KEY, userID INTEGER, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, FOREIGN KEY(userID) REFERENCES users(id) FOREIGN KEY(series) REFERENCES popseries(id) FOREIGN KEY(category) REFERENCES popcategory(id))";
 
