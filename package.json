@@ -13,6 +13,10 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "express": "^4.16.4",
-    "sqlite3": "^4.0.2"
+    "gmail-send": "^1.2.14",
+    "sendmail": "^1.4.1",
+    "sqlite3": "^4.0.2",
+    "uniqid": "^5.0.3",
+    "uniqueid": "^1.0.0"
   }
 }

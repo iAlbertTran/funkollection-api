@@ -2,6 +2,10 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+var uniqid = require('uniqid');
+
+const saltRounds = 10;
 
 var corsOptions = {
     origin: 'http://localhost:4200',
@@ -71,5 +75,33 @@ app.route('/api/funkopop/:name').delete(( req, res ) => {
 });
 
 app.route('/api/account/register').post(( req, res ) => {
-    res.sendStatus(204);
+
+    var reqBody = req.body;
+
+    var username = reqBody.username;
+    var email = reqBody.email;
+    var firstName = reqBody.firstName;
+    var lastName = reqBody.lastName;
+
+    bcrypt.genSalt(saltRounds, (err, salt) => {
+        
+        var uniqueID = uniqid(username);
+
+        bcrypt.hash(req.body.password, salt, (err, hash) => {
+            db.all(
+                "INSERT INTO users (ID, USERNAME, EMAIL, FIRST, LAST, SALT, PASSWORD) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                [uniqueID, username, email, firstName, lastName, salt, hash],
+                (err, rows) => {
+                    res.setHeader('Content-Type', 'application/json');
+                    if(err){
+                        res.status(409).send(JSON.stringify({ message: "Unable to register user." }));
+                    }
+                    else{
+                        res.status(201).send(JSON.stringify({ message: "Success!" }));                    
+                    }
+                }
+            );
+        });
+    });
+
 });

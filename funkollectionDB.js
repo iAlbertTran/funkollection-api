@@ -5,11 +5,11 @@ var dbFile = "funkollection.db";
 var db = new sqlite3.Database(dbFile);
 
 // If not, initialize it
-var createSeriesTable = "CREATE TABLE IF NOT EXISTS popseries (id INTEGER, name TEXT, PRIMARY KEY(id, name))";
-var createCategoryTable = "CREATE TABLE IF NOT EXISTS popcategory (id INTEGER, name TEXT, PRIMARY KEY(id, name))";
-var createUsersTable = "CREATE TABLE IF NOT EXISTS users (id INTEGER, username TEXT, email TEXT, first TEXT, last TEXT, salt TEXT, password TEXT, verified INTEGER, PRIMARY KEY(id, username, email))";
-var createFunkoPopTable = "CREATE TABLE IF NOT EXISTS funkopop (id INTEGER, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, PRIMARY KEY(id, name), FOREIGN KEY(category) REFERENCES popcategory(id) FOREIGN KEY(series) REFERENCES popseries(id))";
-var createUserFunkoPopTable = "CREATE TABLE IF NOT EXISTS usersfunkopops (id INTEGER PRIMARY KEY, userID INTEGER, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, FOREIGN KEY(userID) REFERENCES users(id) FOREIGN KEY(series) REFERENCES popseries(id) FOREIGN KEY(category) REFERENCES popcategory(id))";
+var createSeriesTable = "CREATE TABLE IF NOT EXISTS popseries (id TEXT UNIQUE, name TEXT UNIQUE, PRIMARY KEY(name))";
+var createCategoryTable = "CREATE TABLE IF NOT EXISTS popcategory (id TEXT UNIQUE, name TEXT UNIQUE, PRIMARY KEY(id, name))";
+var createUsersTable = "CREATE TABLE IF NOT EXISTS users (id TEXT UNIQUE, username TEXT UNIQUE, email TEXT UNIQUE, first TEXT, last TEXT, salt TEXT, password TEXT, resetpassword INTEGER DEFAULT 0, verified INTEGER DEFAULT 0, PRIMARY KEY(id, username, email))";
+var createFunkoPopTable = "CREATE TABLE IF NOT EXISTS funkopop (id TEXT UNIQUE, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, PRIMARY KEY(id, name), FOREIGN KEY(category) REFERENCES popcategory(id) FOREIGN KEY(series) REFERENCES popseries(id))";
+var createUserFunkoPopTable = "CREATE TABLE IF NOT EXISTS usersfunkopops (id TEXT PRIMARY KEY UNIQUE, userID INTEGER, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, FOREIGN KEY(userID) REFERENCES users(id) FOREIGN KEY(series) REFERENCES popseries(id) FOREIGN KEY(category) REFERENCES popcategory(id))";
 
 var seriesNames = [
     {id: 1, name: "Marvel"},
