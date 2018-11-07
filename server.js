@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 var uniqid = require('uniqid');
+var lowerCase = require('lower-case')
 
 const saltRounds = 10;
 
@@ -78,8 +79,8 @@ app.route('/api/account/register').post(( req, res ) => {
 
     var reqBody = req.body;
 
-    var username = reqBody.username;
-    var email = reqBody.email;
+    var username = lowerCase(reqBody.username);
+    var email = lowerCase(reqBody.email);
     var firstName = reqBody.firstName;
     var lastName = reqBody.lastName;
 
@@ -109,7 +110,7 @@ app.route('/api/account/register').post(( req, res ) => {
 
 app.route('/api/account/isEmailRegistered').post(( req, res ) => {
     var reqBody = req.body;
-    var email = reqBody.email;
+    var email = lowerCase(reqBody.email);
 
     db.all("SELECT * FROM users WHERE users.email = ?", [email], (err, rows) => {
         if(err){
@@ -130,8 +131,7 @@ app.route('/api/account/isEmailRegistered').post(( req, res ) => {
 
 app.route('/api/account/isUsernameRegistered').post(( req, res ) => {
     var reqBody = req.body;
-    var username = reqBody.username;
-    console.log(username);
+    var username = lowerCase(reqBody.username);
     db.all("SELECT * FROM users WHERE users.username = ?", [username], (err, rows) => {
         if(err){
             res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to check availability of username." }));
@@ -143,6 +143,42 @@ app.route('/api/account/isUsernameRegistered').post(( req, res ) => {
             else{
                 res.status(200).send(JSON.stringify({ statusCode: 200, message: "Username is available." }));
 
+            }
+        }
+    });
+});
+
+app.route('/api/account/login').post(( req, res ) => {
+    var reqBody = req.body;
+    var username = lowerCase(reqBody.username);
+    var password = reqBody.password;
+    
+    db.all("SELECT * FROM users where users.username = ?", [username], (err, rows) => {
+        if(err){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to login." }));
+        }
+        else{
+            if(rows.length > 0){
+                var hash = rows[0].password;
+
+                bcrypt.compare(password, hash, (err, success) => {
+                    if(err){
+                        res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to login." }));
+                    }
+                    else{
+
+                        if(success){
+                            res.status(200).send(JSON.stringify({ statusCode: 200, message: "Login success!" }));
+                        }
+                        else{
+                            res.status(400).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
+                        }
+
+                    }
+                });
+            }
+            else{
+                res.status(400).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
             }
         }
     });
