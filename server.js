@@ -94,14 +94,56 @@ app.route('/api/account/register').post(( req, res ) => {
                 (err, rows) => {
                     res.setHeader('Content-Type', 'application/json');
                     if(err){
-                        res.status(409).send(JSON.stringify({ message: "Unable to register user." }));
+                        res.status(409).send(JSON.stringify({ statusCode: 409, message: "Unable to register user." }));
                     }
                     else{
-                        res.status(201).send(JSON.stringify({ message: "Success!" }));                    
+                        res.status(201).send(JSON.stringify({ statusCode: 201, message: "Success!" }));                    
                     }
                 }
             );
         });
     });
 
+});
+
+
+app.route('/api/account/isEmailRegistered').post(( req, res ) => {
+    var reqBody = req.body;
+    var email = reqBody.email;
+
+    db.all("SELECT * FROM users WHERE users.email = ?", [email], (err, rows) => {
+        if(err){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to check availability of email." }));
+        }
+        else{
+            if(rows.length > 0){
+                res.status(409).send(JSON.stringify({ statusCode: 409, message: "Email is already taken." }));
+            }
+            else{
+                res.status(200).send(JSON.stringify({ statusCode: 200, message: "Email is available." }));
+
+            }
+        }
+    });
+});
+
+
+app.route('/api/account/isUsernameRegistered').post(( req, res ) => {
+    var reqBody = req.body;
+    var username = reqBody.username;
+    console.log(username);
+    db.all("SELECT * FROM users WHERE users.username = ?", [username], (err, rows) => {
+        if(err){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to check availability of username." }));
+        }
+        else{
+            if(rows.length > 0){
+                res.status(409).send(JSON.stringify({ statusCode: 409, message: "Username is already taken." }));
+            }
+            else{
+                res.status(200).send(JSON.stringify({ statusCode: 200, message: "Username is available." }));
+
+            }
+        }
+    });
 });
