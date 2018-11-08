@@ -56,6 +56,19 @@ app.route('/api/series').get(( req, res ) => {
 
 });
 
+app.route('/api/category').get(( req, res ) => {
+    db.all('SELECT * FROM popcategory', function(err, rows){
+        if(err != null){
+            console.log(err);
+        }   else {
+            res.status(200);
+            res.type("application/json");
+            res.send(rows);
+        }
+    })
+
+});
+
 app.route('/api/funkopop/:name').get(( req, res ) => {
     const requestedPopName = req.params['name'];
     res.send({
