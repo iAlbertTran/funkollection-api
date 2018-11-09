@@ -1,12 +1,16 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-var uniqid = require('uniqid');
-var lowerCase = require('lower-case')
-
+const uniqid = require('uniqid');
+const lowerCase = require('lower-case');
+const jwt = require('jsonwebtoken');
+const moment = require('moment');
+const multiparty = require('multiparty');
 const saltRounds = 10;
+const formidable = require('formidable');
 
 var corsOptions = {
     origin: 'http://localhost:4200',
@@ -18,7 +22,10 @@ var dbFile = "funkollection.db";
 var db = new sqlite3.Database(dbFile);  // new object, old DB
 
 app.use(cors(corsOptions));
-app.use( bodyParser.json() );
+
+//limit required to upload images
+app.use( bodyParser.json({limit: "50mb"}) );
+app.use( bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}) );
 
 app.listen(8000, () => {
     console.log('Server started!');
@@ -76,8 +83,26 @@ app.route('/api/funkopop/:name').get(( req, res ) => {
     });
 });
 
-app.route('/api/funkopop').post(( req, res ) => {
-    res.send( 201, req.body );
+app.route('/api/funkopop/upload/new').post(( req, res ) => {
+    //var form = new multiparty.Form();
+    
+    var form = new formidable.IncomingForm();
+    form.parse(req); // figures out what files are in form
+
+    // callback for when a file begins to be processed
+    form.on('fileBegin', function (name, file){
+	// put it in /public
+
+        console.log(file);
+    });
+
+    form.on('end', function (){
+        console.log('success');
+        });
+
+    var token = req.headers.authorization.split(' ')[1];
+
+
 });
 
 app.route('/api/funkopop/:name').put(( req, res ) => {
@@ -165,34 +190,55 @@ app.route('/api/account/login').post(( req, res ) => {
     var reqBody = req.body;
     var username = lowerCase(reqBody.username);
     var password = reqBody.password;
-    
+
     db.all("SELECT * FROM users where users.username = ?", [username], (err, rows) => {
         if(err){
             res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to login." }));
         }
         else{
             if(rows.length > 0){
-                var hash = rows[0].password;
 
-                bcrypt.compare(password, hash, (err, success) => {
+                bcrypt.compare(password, rows[0].password, (err, success) => {
                     if(err){
                         res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to login." }));
                     }
                     else{
-
                         if(success){
-                            res.status(200).send(JSON.stringify({ statusCode: 200, message: "Login success!" }));
+
+                            res.status(200).send(JSON.stringify(
+                            { 
+                                statusCode: 200, 
+                                message: "Login success!",
+                                token: encodeToken(rows[0].id),
+                            }));
                         }
                         else{
-                            res.status(400).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
+                            res.status(409).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
                         }
 
                     }
                 });
             }
             else{
-                res.status(400).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
+                res.status(409).send(JSON.stringify({ statusCode: 409, message: "Login failed. Try again" }));
             }
         }
     });
 });
+
+
+function encodeToken(userID){
+
+    const payload = {
+        exp: moment().add(7, "days").unix(),
+        iat: moment().unix(),
+        sub: userID
+
+    }
+
+    return jwt.sign(payload, process.env.TOKEN_SECRET);
+}
+
+function decodeToken(token){
+    return jwt.verify(token, process.env.TOKEN_SECRET);
+}
