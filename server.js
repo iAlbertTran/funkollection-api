@@ -11,6 +11,8 @@ const moment = require('moment');
 const multiparty = require('multiparty');
 const saltRounds = 10;
 const formidable = require('formidable');
+const multer = require('multer');
+const upload = multer();
 
 var corsOptions = {
     origin: 'http://localhost:4200',
@@ -83,25 +85,39 @@ app.route('/api/funkopop/:name').get(( req, res ) => {
     });
 });
 
-app.route('/api/funkopop/upload/new').post(( req, res ) => {
-    //var form = new multiparty.Form();
-    
-    var form = new formidable.IncomingForm();
-    form.parse(req); // figures out what files are in form
-
-    // callback for when a file begins to be processed
-    form.on('fileBegin', function (name, file){
-	// put it in /public
-
-        console.log(file);
-    });
-
-    form.on('end', function (){
-        console.log('success');
-        });
+app.route('/api/funkopop/upload/new').post(upload.fields([{name: 'file', maxCount: 1}]), ( req, res ) => {
 
     var token = req.headers.authorization.split(' ')[1];
 
+    let formData = req.body;
+    console.log(req.body);
+    console.log(req.files['file'][0]);
+    /*var form = new formidable.IncomingForm();
+    form.uploadDir = "/Users/Albert/Documents/GitHub/funkollection/funkollection-api/public/images/";
+    form.keepExtensions = true;
+
+    
+    
+    form.parse(req, (err, fields, files) => {
+        if(err){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to upload information." }));
+        }
+
+        var funkopopInfo = fields.funkopop;
+
+        var file = files.file;
+        var type = file.type.split('/').pop();
+        if(type == 'jpg' || type == 'jpeg' || type == 'png' ){
+
+            console.log(file.name);
+            file.path = file.name;
+            console.log(file.path);
+
+            f
+
+        }
+
+      });*/ 
 
 });
 
