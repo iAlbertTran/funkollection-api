@@ -8,11 +8,51 @@ const uniqid = require('uniqid');
 const lowerCase = require('lower-case');
 const jwt = require('jsonwebtoken');
 const moment = require('moment');
-const multiparty = require('multiparty');
 const saltRounds = 10;
-const formidable = require('formidable');
 const multer = require('multer');
-const upload = multer();
+const path = require('path');
+
+var authTokenBlackList = [];
+
+var multerStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+       cb(null, '/Users/Albert/Documents/GitHub/funkollection/funkollection-api/public/images')
+    },
+    filename: function (req, file, cb) {
+        const funkopop = JSON.parse(req.body.funkopop);
+
+        var name = funkopop.name;
+        var series = funkopop.series;
+        var category = funkopop.category;
+        var number = funkopop.number;
+        
+        var ext = file.mimetype.split("/").pop();
+
+        name = name.replace(/\s/g, '');
+        series = series.replace(/\s/g, '');
+        category = category.replace(/\s|:/g, '');
+
+        
+        const fileName = `${series}-${category}-${name}-${number}.${ext}`;
+
+
+        cb(null, fileName)
+    }
+});
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: function (req, file, cb) {
+      var filetypes = /jpeg|jpg|png/;
+      var mimetype = filetypes.test(file.mimetype);
+      var extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  
+      if (mimetype && extname) {
+        return cb(null, true);
+      }
+      cb("Error: File upload only supports the following filetypes - " + filetypes);
+    }
+  });
 
 var corsOptions = {
     origin: 'http://localhost:4200',
@@ -32,6 +72,29 @@ app.use( bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50
 app.listen(8000, () => {
     console.log('Server started!');
 });
+
+
+
+// used to authenticate users for api calls before doing them
+function authenticateUser(req, res, next){
+    var token = req.headers.authorization.split(' ')[1];
+
+    if(authTokenBlackList.includes(token)){
+        res.status(409).send(JSON.stringify({ statusCode: 400, message: "Invalid token." }));
+    }
+
+    else{
+        var userInfo = decodeToken(token);
+        if(userInfo.exp < moment().unix()){
+            res.status(409).send(JSON.stringify({ statusCode: 400, message: "Invalid token." }));
+        }
+    }
+    next();
+}
+
+
+
+
 
 app.route('/api/funkopop').get(( req, res ) => {
     res.send({
@@ -85,41 +148,24 @@ app.route('/api/funkopop/:name').get(( req, res ) => {
     });
 });
 
-app.route('/api/funkopop/upload/new').post(upload.fields([{name: 'file', maxCount: 1}]), ( req, res ) => {
 
-    var token = req.headers.authorization.split(' ')[1];
+var multerUpload = upload.fields([{name: 'file', maxCount: 1}]);
 
-    let formData = req.body;
-    console.log(req.body);
-    console.log(req.files['file'][0]);
-    /*var form = new formidable.IncomingForm();
-    form.uploadDir = "/Users/Albert/Documents/GitHub/funkollection/funkollection-api/public/images/";
-    form.keepExtensions = true;
+app.route('/api/funkopop/upload/new').post(
+    [authenticateUser,
+    multerUpload, 
+    ( req, res ) => {
+        let image = req.files["file"][0].filename;
 
-    
-    
-    form.parse(req, (err, fields, files) => {
-        if(err){
-            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to upload information." }));
-        }
+        const funkopop = JSON.parse(req.body.funkopop);
 
-        var funkopopInfo = fields.funkopop;
+        var name = funkopop.name;
+        var series = funkopop.series;
+        var category = funkopop.category;
+        var number = funkopop.number;
 
-        var file = files.file;
-        var type = file.type.split('/').pop();
-        if(type == 'jpg' || type == 'jpeg' || type == 'png' ){
-
-            console.log(file.name);
-            file.path = file.name;
-            console.log(file.path);
-
-            f
-
-        }
-
-      });*/ 
-
-});
+    }]
+);
 
 app.route('/api/funkopop/:name').put(( req, res ) => {
     res.send( 200, req.body );
@@ -243,6 +289,20 @@ app.route('/api/account/login').post(( req, res ) => {
 });
 
 
+app.route('/api/account/logout').post(( req, res ) => {
+    var token = req.headers.authorization.split(' ')[1];
+    authTokenBlackList.push(token);
+
+    res.status(200).send(JSON.stringify(
+        { 
+            statusCode: 200, 
+            message: "Logout success!"        
+        }));
+
+});
+
+
+
 function encodeToken(userID){
 
     const payload = {
@@ -258,3 +318,18 @@ function encodeToken(userID){
 function decodeToken(token){
     return jwt.verify(token, process.env.TOKEN_SECRET);
 }
+
+
+
+// checks the authTokenBlacklist every hour to remove expired tokens
+setInterval(() => {
+    console.log("Checking blacklisted tokens.");
+    for(let i = 0; i < authTokenBlackList.length; ++i){
+        var token = authTokenBlackList[i];
+        var info = decodeToken(token);
+
+        if(info.exp < moment().unix){
+            authTokenBlackList.splice(token, 1);
+        }
+    }
+}, 3600000);
