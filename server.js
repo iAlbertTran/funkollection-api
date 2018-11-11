@@ -22,8 +22,8 @@ var multerStorage = multer.diskStorage({
         const funkopop = JSON.parse(req.body.funkopop);
 
         var name = funkopop.name;
-        var series = funkopop.series;
-        var category = funkopop.category;
+        var series = funkopop.series.name;
+        var category = funkopop.category.name;
         var number = funkopop.number;
         
         var ext = file.mimetype.split("/").pop();
@@ -115,31 +115,89 @@ app.route('/api/funkopop').get(( req, res ) => {
     });
 });
 
-app.route('/api/series').get(( req, res ) => {
-    db.all('SELECT * FROM popseries', function(err, rows){
-        if(err != null){
-            console.log(err);
-        }   else {
-            res.status(200);
-            res.type("application/json");
-            res.send(rows);
+app.route('/api/series').get(
+    [authenticateUser,
+    ( req, res ) => {
+        
+        db.all('SELECT * FROM popseries', (err, rows) => {
+            if(err != null){
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get series list." }));
+            }   else {
+
+                res.status(200);
+                res.type("application/json");
+                res.send(rows);
+            }
+        })
+    }]
+);
+
+app.route('/api/series').post(
+    [authenticateUser,
+    ( req, res ) => {
+
+        var reqBody = req.body;
+        var series = reqBody.series;
+        if(series == null || series.length == 0){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Series format invalid." }));
         }
-    })
+        
+        var seriesID = uniqid();
 
-});
+        db.run('INSERT OR REPLACE INTO popseries VALUES(?, ?)', [seriesID, series], (err, rows) =>{
+            if(err){
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save series" }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, seriesID: seriesID }));
+            }
+        })
+    }]
+);
 
-app.route('/api/category').get(( req, res ) => {
-    db.all('SELECT * FROM popcategory', function(err, rows){
-        if(err != null){
-            console.log(err);
-        }   else {
-            res.status(200);
-            res.type("application/json");
-            res.send(rows);
+app.route('/api/:seriesID/categories').get(
+    [authenticateUser,
+    ( req, res ) => {
+
+        const seriesID = req.params['seriesID'];
+        db.run('SELECT * FROM popcategory WHERE popcategory.series = ?', seriesID, (err, rows) => {
+            if(err != null){
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get categories list." }));
+            }   else {
+                res.status(200);
+                res.type("application/json");
+                res.send(rows);
+            }
+        })
+    }]
+);
+
+app.route('/api/category').post(
+    [authenticateUser,
+    ( req, res ) => {
+
+        var reqBody = req.body;
+        var seriesID = reqBody.seriesID;
+        var category = reqBody.category;
+
+        if(seriesID == null || seriesID.length == 0){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Series format invalid." }));
         }
-    })
 
-});
+        if(category == null || category.length == 0){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Category format invalid." }));
+        }
+        
+        var categoryID = uniqid();
+
+        db.run('INSERT OR REPLACE INTO popcategory VALUES(?, ?, ?)', [categoryID, category, seriesID], (err, rows) =>{
+            if(err){
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save category" }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, categoryID: categoryID }));
+            }
+        })
+    }]
+);
 
 app.route('/api/funkopop/:name').get(( req, res ) => {
     const requestedPopName = req.params['name'];
@@ -151,7 +209,7 @@ app.route('/api/funkopop/:name').get(( req, res ) => {
 
 var multerUpload = upload.fields([{name: 'file', maxCount: 1}]);
 
-app.route('/api/funkopop/upload/new').post(
+app.route('/api/funkopop/upload').post(
     [authenticateUser,
     multerUpload, 
     ( req, res ) => {
@@ -163,9 +221,25 @@ app.route('/api/funkopop/upload/new').post(
         var series = funkopop.series;
         var category = funkopop.category;
         var number = funkopop.number;
+        
+        if(name == null || name.length == 0 || series.id == null || series.id.length == 0 || category.id == null || category.id.length == 0 || number == null || number < 0 ){
+            res.status(400).send(JSON.stringify({ statusCode: 400, message: "Invalid values." }));
+        }
+
+        var uniqueID = uniqid();
+
+        db.run('INSERT OR REPLACE INTO funkopop VALUES(?, ?, ?, ?, ?, ?) ', [uniqueID, series.id, category.id, name, number, image], (err, rows) =>{
+            if(err){
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save funko pop" }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, popID: uniqueID }));
+            }
+        })
 
     }]
 );
+
+
 
 app.route('/api/funkopop/:name').put(( req, res ) => {
     res.send( 200, req.body );
@@ -186,7 +260,7 @@ app.route('/api/account/register').post(( req, res ) => {
 
     bcrypt.genSalt(saltRounds, (err, salt) => {
         
-        var uniqueID = uniqid(username);
+        var uniqueID = uniqid();
 
         bcrypt.hash(req.body.password, salt, (err, hash) => {
             db.all(
