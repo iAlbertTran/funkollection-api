@@ -20,7 +20,6 @@ var multerStorage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         const funkopop = JSON.parse(req.body.funkopop);
-
         var name = funkopop.name;
         var series = funkopop.series.name;
         var category = funkopop.category.name;
@@ -144,8 +143,9 @@ app.route('/api/series').post(
         
         var seriesID = uniqid();
 
-        db.run('INSERT OR REPLACE INTO popseries VALUES(?, ?)', [seriesID, series], (err, rows) =>{
+        db.all('INSERT INTO popseries VALUES(?, ?)', [seriesID, series], (err, rows) =>{
             if(err){
+                console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save series" }));
             }   else {
                 res.status(200).send(JSON.stringify({ statusCode: 200, seriesID: seriesID }));
@@ -159,7 +159,7 @@ app.route('/api/:seriesID/categories').get(
     ( req, res ) => {
 
         const seriesID = req.params['seriesID'];
-        db.run('SELECT * FROM popcategory WHERE popcategory.series = ?', seriesID, (err, rows) => {
+        db.all('SELECT * FROM popcategory WHERE popcategory.series = ?', seriesID, (err, rows) => {
             if(err != null){
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get categories list." }));
             }   else {
@@ -189,8 +189,9 @@ app.route('/api/category').post(
         
         var categoryID = uniqid();
 
-        db.run('INSERT OR REPLACE INTO popcategory VALUES(?, ?, ?)', [categoryID, category, seriesID], (err, rows) =>{
+        db.all('INSERT INTO popcategory VALUES(?, ?, ?)', [categoryID, category, seriesID], (err, rows) =>{
             if(err){
+                console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save category" }));
             }   else {
                 res.status(200).send(JSON.stringify({ statusCode: 200, categoryID: categoryID }));
@@ -228,8 +229,9 @@ app.route('/api/funkopop/upload').post(
 
         var uniqueID = uniqid();
 
-        db.run('INSERT OR REPLACE INTO funkopop VALUES(?, ?, ?, ?, ?, ?) ', [uniqueID, series.id, category.id, name, number, image], (err, rows) =>{
+        db.all('INSERT INTO funkopop VALUES(?, ?, ?, ?, ?, ?) ', [uniqueID, series.id, category.id, name, number, image], (err, rows) =>{
             if(err){
+                console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to save funko pop" }));
             }   else {
                 res.status(200).send(JSON.stringify({ statusCode: 200, popID: uniqueID }));
