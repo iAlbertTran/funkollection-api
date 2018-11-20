@@ -11,6 +11,9 @@ const moment = require('moment');
 const saltRounds = 10;
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+const imagePath = "./public/images/";
+
 
 var authTokenBlackList = [];
 
@@ -79,13 +82,13 @@ function authenticateUser(req, res, next){
     var token = req.headers.authorization.split(' ')[1];
 
     if(authTokenBlackList.includes(token)){
-        res.status(409).send(JSON.stringify({ statusCode: 400, message: "Invalid token." }));
+        res.status(409).send(JSON.stringify({ statusCode: 409, message: "Invalid token." }));
     }
 
     else{
         var userInfo = decodeToken(token);
         if(userInfo.exp < moment().unix()){
-            res.status(409).send(JSON.stringify({ statusCode: 400, message: "Invalid token." }));
+            res.status(409).send(JSON.stringify({ statusCode: 409, message: "Invalid token." }));
         }
     }
     next();
@@ -95,24 +98,51 @@ function authenticateUser(req, res, next){
 
 
 
-app.route('/api/funkopop').get(( req, res ) => {
-    res.send({
-        vinyls: [
-            {
-                name: 'Iron Man (Gold Chrome)',
-                series: 'Marvel',
-                category: 'MS-10',
-                series_number: 375
-            },
-            {
-                name: 'Venomized Iron Man',
-                series: 'Marvel',
-                category: 'Venom',
-                series_number: 365
+app.route('/api/funkopop').get(
+    [authenticateUser,
+    ( req, res ) => {
+        db.all('SELECT *, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop INNER JOIN popseries ON funkopop.series = popseries.id INNER JOIN popcategory ON funkopop.category = popcategory.id', (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows }));
             }
-        ]
-    });
-});
+        });
+    }]
+);
+
+
+app.route('/api/funkopop/:image').get(
+    ( req, res ) => {
+        const image = req.params['image'];  
+        
+        fs.access(imagePath + image, fs.F_OK, (err) => {
+            if (err) {
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch image." }));
+            }
+            res.status(200).sendFile(`public/images/${image}`, { root: '.' });
+            //file exists
+          })
+
+    }
+);
+
+app.route('/api/funkopop/:username').get(
+    [authenticateUser,
+    ( req, res ) => {
+        const username = req.params['username'];
+        db.all('SELECT * FROM usersfunkopops', (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyls" }));
+            }   else {
+                console.log(rows);
+                res.status(200).send(JSON.stringify({ statusCode: 200, seriesID: seriesID }));
+            }
+        })
+    }]
+);
 
 app.route('/api/series').get(
     [authenticateUser,
