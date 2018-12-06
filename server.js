@@ -79,22 +79,20 @@ app.listen(8000, () => {
 
 // used to authenticate users for api calls before doing them
 function authenticateUser(req, res, next){
-    var token = req.headers.authorization.split(' ')[1];
-
+    let token = req.headers.authorization.split(' ')[1];
     if(authTokenBlackList.includes(token)){
         res.status(409).send(JSON.stringify({ statusCode: 409, message: "Invalid token." }));
     }
 
-    else{
-        var userInfo = decodeToken(token);
-        if(userInfo.exp < moment().unix()){
-            res.status(409).send(JSON.stringify({ statusCode: 409, message: "Invalid token." }));
-        }
+    let userInfo = decodeToken(token);
+
+    if(userInfo.exp < moment().unix()){
+        res.status(409).send(JSON.stringify({ statusCode: 409, message: "Invalid token." }));
     }
+    
+    req.userID = userInfo.sub;
     next();
 }
-
-
 
 
 
@@ -126,6 +124,23 @@ app.route('/api/funkopop/:image').get(
           })
 
     }
+);
+
+app.route('/api/users/:user/collection/add/:popID').post(
+    [authenticateUser,
+    ( req, res ) => {
+        const popID = req.params['popID'];        
+        const userID = req.userID;
+
+        db.all('INSERT INTO usercollection VALUES(?, ?)', [userID, popID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to add Pop! Vinyl to collection." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200}));
+            }
+        });
+    }]
 );
 
 app.route('/api/funkopop/:username').get(
