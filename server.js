@@ -126,6 +126,27 @@ app.route('/api/funkopop/:image').get(
     }
 );
 
+app.route('/api/users/:user/collection').get(
+    [authenticateUser,
+    ( req, res ) => {
+        const userID = req.userID;
+
+        db.all('SELECT funkopopID FROM usercollection WHERE usercollection.userID = ?', [userID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyl collection." }));
+            }   else {
+                let array = [];
+                rows.forEach((funkopop) => {
+                    array.push(funkopop.funkopopID);
+                });
+
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: array}));
+            }
+        });
+    }]
+);
+
 app.route('/api/users/:user/collection/add/:popID').post(
     [authenticateUser,
     ( req, res ) => {
@@ -136,6 +157,78 @@ app.route('/api/users/:user/collection/add/:popID').post(
             if(err){
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to add Pop! Vinyl to collection." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/collection/remove/:popID').post(
+    [authenticateUser,
+    ( req, res ) => {
+        const popID = req.params['popID'];        
+        const userID = req.userID;
+
+        db.all('DELETE FROM usercollection WHERE usercollection.userID = ? AND usercollection.funkopopID = ?', [userID, popID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to remove Pop! Vinyl from collection." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/wishlist').get(
+    [authenticateUser,
+    ( req, res ) => {
+        const userID = req.userID;
+
+        db.all('SELECT funkopopID FROM userwishlist WHERE userwishlist.userID = ?', [userID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyl wishlist." }));
+            }   else {
+                let array = [];
+                rows.forEach((funkopop) => {
+                    array.push(funkopop.funkopopID);
+                });
+
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: array}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/wishlist/add/:popID').post(
+    [authenticateUser,
+    ( req, res ) => {
+        const popID = req.params['popID'];        
+        const userID = req.userID;
+
+        db.all('INSERT INTO userwishlist VALUES(?, ?)', [userID, popID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to add Pop! Vinyl to wishlist." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/wishlist/remove/:popID').post(
+    [authenticateUser,
+    ( req, res ) => {
+        const popID = req.params['popID'];        
+        const userID = req.userID;
+
+        db.all('DELETE FROM userwishlist WHERE userwishlist.userID = ? AND userwishlist.funkopopID = ?', [userID, popID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to remove Pop! Vinyl from wishlist." }));
             }   else {
                 res.status(200).send(JSON.stringify({ statusCode: 200}));
             }
