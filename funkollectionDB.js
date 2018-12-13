@@ -13,7 +13,7 @@ var createSeriesTable = "CREATE TABLE IF NOT EXISTS popseries (id TEXT UNIQUE, n
 var createCategoryTable = "CREATE TABLE IF NOT EXISTS popcategory (id TEXT UNIQUE, name TEXT UNIQUE, series TEXT, PRIMARY KEY(name, series), FOREIGN KEY(series) REFERENCES series(id))";
 var createUserTypeTable = "CREATE TABLE IF NOT EXISTS usertype (id INTEGER, name TEXT, PRIMARY KEY(id))";
 var createUsersTable = "CREATE TABLE IF NOT EXISTS users (id TEXT UNIQUE, type INTEGER DEFAULT 0, username TEXT UNIQUE, email TEXT UNIQUE, first TEXT, last TEXT, salt TEXT, password TEXT, resetpassword INTEGER DEFAULT 0, verified INTEGER DEFAULT 0, PRIMARY KEY(username, email), FOREIGN KEY(type) REFERENCES usertype(id))";
-var createFunkoPopTable = "CREATE TABLE IF NOT EXISTS funkopop (id TEXT UNIQUE, series INTEGER, category INTEGER, name TEXT, number INTEGER, image BLOB, PRIMARY KEY(series, category, name, number), FOREIGN KEY(category) REFERENCES popcategory(id) FOREIGN KEY(series) REFERENCES popseries(id))";
+var createFunkoPopTable = "CREATE TABLE IF NOT EXISTS funkopop (id TEXT UNIQUE, series TEXT, category TEXT, name TEXT, number INTEGER, image BLOB, PRIMARY KEY(series, category, name, number), FOREIGN KEY(category) REFERENCES popcategory(id) FOREIGN KEY(series) REFERENCES popseries(id))";
 var createCollectionTable = "CREATE TABLE IF NOT EXISTS usercollection (userID INTEGER, funkopopID TEXT, UNIQUE(userID, funkopopID), FOREIGN KEY(userID) REFERENCES users(id)  FOREIGN KEY(funkoPopID) REFERENCES funkopop(id))";
 var createWishlistTable = "CREATE TABLE IF NOT EXISTS userwishlist (userID INTEGER, funkopopID TEXT, UNIQUE(userID, funkopopID), FOREIGN KEY(userID) REFERENCES users(id)  FOREIGN KEY(funkoPopID) REFERENCES funkopop(id))";
 
