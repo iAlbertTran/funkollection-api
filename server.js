@@ -99,7 +99,9 @@ function authenticateUser(req, res, next){
 app.route('/api/funkopop').get(
     [authenticateUser,
     ( req, res ) => {
-        db.all('SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop INNER JOIN popseries ON funkopop.series = popseries.id INNER JOIN popcategory ON funkopop.category = popcategory.id', (err, rows) =>{
+        db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
+                    INNER JOIN popseries ON funkopop.series = popseries.id 
+                    INNER JOIN popcategory ON funkopop.category = popcategory.id`, (err, rows) =>{
             if(err){
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
@@ -120,15 +122,19 @@ app.route('/api/funkopop/:series/:category/:name').get(
         console.log(series, category, name);
 
 
-        db.all(`SELECT * FROM funkopop WHERE funkopop.series = 
-            (SELECT id FROM popseries WHERE LOWER(popseries.name) LIKE ?) AND funkopop.category = 
-            (SELECT id FROM popcategory WHERE LOWER(popcategory.name) LIKE ?) AND LOWER(funkopop.name) LIKE ?`, [series, category, name], (err, rows) =>{
+        db.all(`SELECT *, popseries.name AS series, popcategory.name AS category FROM
+                    (SELECT * FROM funkopop WHERE funkopop.series = 
+                        (SELECT id FROM popseries WHERE LOWER(popseries.name) LIKE ?) AND funkopop.category = 
+                        (SELECT id FROM popcategory WHERE LOWER(popcategory.name) LIKE ?) AND LOWER(funkopop.name) LIKE ?)
+                AS individualpop
+                INNER JOIN popseries ON individualpop.series = popseries.id
+                INNER JOIN popcategory ON individualpop.category = popcategory.id LIMIT 1`, [series, category, name], (err, rows) =>{
             if(err){
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch funko pop." }));
             }   else {
                 if(rows.length > 0)
-                    res.status(200).send(JSON.stringify({ statusCode: 200, funkopop: rows }));
+                    res.status(200).send(JSON.stringify({ statusCode: 200, funkopop: rows[0] }));
                 else
                     res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch funko pop." }));
 
