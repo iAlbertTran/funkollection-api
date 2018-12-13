@@ -110,6 +110,33 @@ app.route('/api/funkopop').get(
     }]
 );
 
+app.route('/api/funkopop/:series/:category/:name').get(
+    [authenticateUser,
+    ( req, res ) => {
+
+        const series = insertWildCard(req.params['series']); 
+        const category = insertWildCard(req.params['category']);
+        const name = insertWildCard(req.params['name']);
+        console.log(series, category, name);
+
+
+        db.all(`SELECT * FROM funkopop WHERE funkopop.series = 
+            (SELECT id FROM popseries WHERE LOWER(popseries.name) LIKE ?) AND funkopop.category = 
+            (SELECT id FROM popcategory WHERE LOWER(popcategory.name) LIKE ?) AND LOWER(funkopop.name) LIKE ?`, [series, category, name], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch funko pop." }));
+            }   else {
+                if(rows.length > 0)
+                    res.status(200).send(JSON.stringify({ statusCode: 200, funkopop: rows }));
+                else
+                    res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch funko pop." }));
+
+            }
+        });
+    }]
+);
+
 
 app.route('/api/funkopop/:image').get(
     ( req, res ) => {
@@ -533,6 +560,13 @@ function decodeToken(token){
     return jwt.verify(token, process.env.TOKEN_SECRET);
 }
 
+
+function insertWildCard(text){
+    return text
+        .replace(/ /g, '%')
+        .replace(/-/g, '%');
+
+}
 
 
 // checks the authTokenBlacklist every hour to remove expired tokens
