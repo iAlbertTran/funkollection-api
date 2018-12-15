@@ -112,6 +112,28 @@ app.route('/api/funkopop').get(
     }]
 );
 
+app.route('/api/funkopop/series/:series').get(
+    [authenticateUser,
+    ( req, res ) => {
+
+        const series = req.params['series']; 
+
+        db.all(`SELECT *, individualpop.id AS id, individualpop.name AS name, popseries.name AS series, popcategory.name AS category FROM
+                    (SELECT * FROM funkopop WHERE funkopop.series = ?)
+                AS individualpop
+                INNER JOIN popseries ON individualpop.series = popseries.id
+                INNER JOIN popcategory ON individualpop.category = popcategory.id
+                ORDER BY individualpop.name ASC`, [series], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows }));
+            }
+        });
+    }]
+);
+
 app.route('/api/funkopop/:series/:category/:name').get(
     [authenticateUser,
     ( req, res ) => {
@@ -122,7 +144,7 @@ app.route('/api/funkopop/:series/:category/:name').get(
         console.log(series, category, name);
 
 
-        db.all(`SELECT *, popseries.name AS series, popcategory.name AS category FROM
+        db.all(`SELECT *, individualpop.id AS id, individualpop.name AS name, popseries.name AS seriesName, popcategory.name AS categoryName FROM
                     (SELECT * FROM funkopop WHERE funkopop.series = 
                         (SELECT id FROM popseries WHERE LOWER(popseries.name) LIKE ?) AND funkopop.category = 
                         (SELECT id FROM popcategory WHERE LOWER(popcategory.name) LIKE ?) AND LOWER(funkopop.name) LIKE ?)
@@ -197,7 +219,7 @@ app.route('/api/users/:user/collection/add/:popID').post(
     }]
 );
 
-app.route('/api/users/:user/collection/remove/:popID').post(
+app.route('/api/users/:user/collection/remove/:popID').delete(
     [authenticateUser,
     ( req, res ) => {
         const popID = req.params['popID'];        
@@ -252,7 +274,7 @@ app.route('/api/users/:user/wishlist/add/:popID').post(
     }]
 );
 
-app.route('/api/users/:user/wishlist/remove/:popID').post(
+app.route('/api/users/:user/wishlist/remove/:popID').delete(
     [authenticateUser,
     ( req, res ) => {
         const popID = req.params['popID'];        
