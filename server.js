@@ -123,7 +123,29 @@ app.route('/api/funkopop/series/:series').get(
                 AS individualpop
                 INNER JOIN popseries ON individualpop.series = popseries.id
                 INNER JOIN popcategory ON individualpop.category = popcategory.id
-                ORDER BY individualpop.name ASC`, [series], (err, rows) =>{
+                ORDER BY individualpop.series, individualpop.category, individualpop.name ASC`, [series], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows }));
+            }
+        });
+    }]
+);
+
+app.route('/api/funkopop/category/:category').get(
+    [authenticateUser,
+    ( req, res ) => {
+
+        const category = req.params['category']; 
+
+        db.all(`SELECT *, individualpop.id AS id, individualpop.name AS name, popseries.name AS series, popcategory.name AS category FROM
+                    (SELECT * FROM funkopop WHERE funkopop.category = ?)
+                AS individualpop
+                INNER JOIN popseries ON individualpop.series = popseries.id
+                INNER JOIN popcategory ON individualpop.category = popcategory.id
+                ORDER BY individualpop.series, individualpop.category, individualpop.name ASC`, [category], (err, rows) =>{
             if(err){
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
@@ -592,7 +614,8 @@ function decodeToken(token){
 function insertWildCard(text){
     return text
         .replace(/ /g, '%')
-        .replace(/-/g, '%');
+        .replace(/-/g, '%')
+        + '%';
 
 }
 
