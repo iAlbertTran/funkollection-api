@@ -112,6 +112,23 @@ app.route('/api/funkopop').get(
     }]
 );
 
+app.route('/api/funkopop/random').get(
+    [authenticateUser,
+    ( req, res ) => {
+        db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
+                    INNER JOIN popseries ON funkopop.series = popseries.id 
+                    INNER JOIN popcategory ON funkopop.category = popcategory.id
+                ORDER BY RANDOM() LIMIT 10`, (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows }));
+            }
+        });
+    }]
+);
+
 app.route('/api/funkopop/series/:series').get(
     [authenticateUser,
     ( req, res ) => {
