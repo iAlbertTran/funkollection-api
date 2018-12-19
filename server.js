@@ -112,13 +112,15 @@ app.route('/api/funkopop').get(
     }]
 );
 
-app.route('/api/funkopop/random').get(
+app.route('/api/funkopop/random/:count').get(
     [authenticateUser,
     ( req, res ) => {
+        const count = req.params['count']; 
+
         db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
                     INNER JOIN popseries ON funkopop.series = popseries.id 
                     INNER JOIN popcategory ON funkopop.category = popcategory.id
-                ORDER BY RANDOM() LIMIT 10`, (err, rows) =>{
+                ORDER BY RANDOM() LIMIT ?`,[count], (err, rows) =>{
             if(err){
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to fetch Funko Pops." }));
