@@ -71,7 +71,7 @@ app.use(cors(corsOptions));
 app.use( bodyParser.json({limit: "50mb"}) );
 app.use( bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}) );
 
-app.listen(8000, () => {
+app.listen(process.env.PORT || 8000, () => {
     console.log('Server started!');
 });
 
