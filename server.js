@@ -19,7 +19,7 @@ var authTokenBlackList = [];
 
 var multerStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-       cb(null, '/Users/Albert/Documents/GitHub/funkollection/funkollection-api/public/images')
+       cb(null, './public/images')
     },
     filename: function (req, file, cb) {
         const funkopop = JSON.parse(req.body.funkopop);
@@ -450,6 +450,7 @@ app.route('/api/funkopop/upload').post(
     [authenticateUser,
     multerUpload, 
     ( req, res ) => {
+        console.log(1);
         let image = req.files["file"][0].filename;
 
         const funkopop = JSON.parse(req.body.funkopop);
