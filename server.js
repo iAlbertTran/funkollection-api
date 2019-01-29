@@ -56,9 +56,16 @@ const upload = multer({
     }
   });
 
+
+var corsWhitelist = ['http://localhost:4200', 'https://ialberttran.github.io/funkollection']
 var corsOptions = {
-    origin: 'http://localhost:4200',
-    optionsSuccessStatus: 200
+  origin: (origin, callback) => {
+    if (corsWhitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
 }
 
 var sqlite3 = require("sqlite3").verbose();  // use sqlite3
