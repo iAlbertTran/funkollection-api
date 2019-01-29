@@ -57,22 +57,17 @@ const upload = multer({
   });
 
 
-var corsWhitelist = ['http://localhost:4200', 'https://ialberttran.github.io/funkollection', 'https://ialberttran.github.io']
 var corsOptions = {
-  origin: (origin, callback) => {
-    if (corsWhitelist.indexOf(origin) !== -1) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  }
+    origin: ['http://localhost:4200', 'https://ialberttran.github.io/funkollection'],
+    optionsSuccessStatus: 200
 }
 
 var sqlite3 = require("sqlite3").verbose();  // use sqlite3
 var dbFile = "funkollection.db";
 var db = new sqlite3.Database(dbFile);  // new object, old DB
 
-app.use(cors(corsOptions));
+//app.use(cors(corsOptions));
+app.use(cors());
 
 //limit required to upload images
 app.use( bodyParser.json({limit: "50mb"}) );
