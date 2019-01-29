@@ -57,7 +57,7 @@ const upload = multer({
   });
 
 
-var corsWhitelist = ['http://localhost:4200', 'https://ialberttran.github.io/funkollection']
+var corsWhitelist = ['http://localhost:4200', 'https://ialberttran.github.io/funkollection', 'https://ialberttran.github.io']
 var corsOptions = {
   origin: (origin, callback) => {
     if (corsWhitelist.indexOf(origin) !== -1) {
