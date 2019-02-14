@@ -224,7 +224,27 @@ app.route('/api/funkopop/:image').get(
     }
 );
 
-app.route('/api/users/:user/collection').get(
+app.route('/api/users/:user/collection/all').get(
+    [authenticateUser,
+    ( req, res ) => {
+        const userID = req.userID;
+
+        db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
+                INNER JOIN popseries ON funkopop.series = popseries.id 
+                INNER JOIN popcategory ON funkopop.category = popcategory.id
+                INNER JOIN (SELECT * FROM usercollection WHERE usercollection.userID = ?) AS usercollection ON usercollection.funkopopID = funkopop.id`, [userID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyl collection." }));
+            }   else {
+                console.log(rows);
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/collection/id').get(
     [authenticateUser,
     ( req, res ) => {
         const userID = req.userID;
@@ -279,7 +299,26 @@ app.route('/api/users/:user/collection/remove/:popID').delete(
     }]
 );
 
-app.route('/api/users/:user/wishlist').get(
+app.route('/api/users/:user/wishlist/all').get(
+    [authenticateUser,
+    ( req, res ) => {
+        const userID = req.userID;
+
+        db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
+                INNER JOIN popseries ON funkopop.series = popseries.id 
+                INNER JOIN popcategory ON funkopop.category = popcategory.id
+                INNER JOIN (SELECT * FROM userwishlist WHERE userwishlist.userID = ?) AS userwishlist ON userwishlist.funkopopID = funkopop.id`, [userID], (err, rows) =>{
+            if(err){
+                console.log(err);
+                res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyl wishlist." }));
+            }   else {
+                res.status(200).send(JSON.stringify({ statusCode: 200, funkopops: rows}));
+            }
+        });
+    }]
+);
+
+app.route('/api/users/:user/wishlist/id').get(
     [authenticateUser,
     ( req, res ) => {
         const userID = req.userID;
