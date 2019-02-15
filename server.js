@@ -13,7 +13,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const imagePath = "./public/images/";
-
+const request = require('request');
 
 var authTokenBlackList = [];
 
@@ -65,6 +65,14 @@ var corsOptions = {
 var sqlite3 = require("sqlite3").verbose();  // use sqlite3
 var dbFile = "funkollection.db";
 var db = new sqlite3.Database(dbFile);  // new object, old DB
+
+
+let ebayCompletedBaseURL = `https://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findCompletedItems&SERVICE-VERSION=1.0.0&SECURITY-APPNAME=AlbertTr-funkolle-PRD-18dd99240-e24114f0&GLOBAL-ID=EBAY-US&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&keywords=`
+
+let ebay_US_ONLY = '&itemFilter.name=LocatedIn&itemFilter.value=US';
+let ebay_SoldItemsOnly = '&itemFilter.name=SoldItemsOnly&itemFilter.value=true';
+let ebay_SortByEndDate = '&sortOrder=EndTimeSoonest';
+let ebayBaseURLending = `&paginationInput.entriesPerPage=`;
 
 //app.use(cors(corsOptions));
 app.use(cors());
@@ -693,3 +701,38 @@ setInterval(() => {
         }
     }
 }, 3600000);
+
+setInterval(() => {
+    console.log("Updating values");
+
+    let firstUpdate = false;
+    db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
+                    INNER JOIN popseries ON funkopop.series = popseries.id 
+                    INNER JOIN popcategory ON funkopop.category = popcategory.id`, (err, rows) =>{
+            if(err){
+                console.log(err);
+            }   else {
+
+                rows.forEach((funkopop) => {
+
+                    let searchText = `Funko pop ${funkopop.name} ${funkopop.number}`;
+                    searchText = searchText.replace(/\s/g, '%20');
+                    let options = {
+                        url: `${ebayCompletedBaseURL}${searchText}${ebayBaseURLending}1000${ebay_US_ONLY}${ebay_SoldItemsOnly}${ebay_SortByEndDate}`,
+                        json: true
+                    };
+
+                    request(options, (error, response, body) => {
+                            if(error){
+                                console.log('error:', error); // Print the error if one occurred
+                            } else{
+                                console.log(body);
+
+                            }
+                    });
+                });
+            }
+        });
+}, 10000);
+
+//43200000
