@@ -14,6 +14,7 @@ const path = require('path');
 const fs = require('fs');
 const imagePath = "./public/images/";
 const request = require('request');
+const rp = require('request-promise');
 
 var authTokenBlackList = [];
 
@@ -691,6 +692,10 @@ function insertWildCard(text){
 
 // checks the authTokenBlacklist every hour to remove expired tokens
 setInterval(() => {
+    checkTokens();
+}, 3600000);
+
+function checkTokens(){
     console.log("Checking blacklisted tokens.");
     for(let i = 0; i < authTokenBlackList.length; ++i){
         var token = authTokenBlackList[i];
@@ -700,39 +705,73 @@ setInterval(() => {
             authTokenBlackList.splice(token, 1);
         }
     }
-}, 3600000);
+}
 
 setInterval(() => {
+    updateTrendingValues();
+}, 60000 * 60 * 12);
+
+function updateTrendingValues(){
     console.log("Updating values");
 
-    let firstUpdate = false;
-    db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category FROM funkopop 
-                    INNER JOIN popseries ON funkopop.series = popseries.id 
-                    INNER JOIN popcategory ON funkopop.category = popcategory.id`, (err, rows) =>{
+    //to get tuples where it was last updated 24 hours ago
+    let last24 = Date.now() - (60000 * 60 * 24);
+
+    db.all(`SELECT *, funkopop.id AS id, funkopop.name AS name, popseries.name AS series, popcategory.name AS category 
+            FROM funkopop 
+                INNER JOIN popseries ON funkopop.series = popseries.id 
+                INNER JOIN popcategory ON funkopop.category = popcategory.id
+            WHERE funkopop.last_update IS NULL OR funkopop.last_update < ? `, [last24], (err, rows) =>{
+        if(err){
+            console.log(err);
+        }   else {
+            if(rows.length <= 0){
+                console.log('No tuples to update');
+                return;
+            }
+
+            rows.forEach((funkopop) => {
+                queryEbay(funkopop, Date.now());
+            });
+        }
+    });
+}
+
+function queryEbay(funkopop, currTimestamp){
+    let popId = funkopop.id;
+    let searchText = `Funko pop ${funkopop.name} ${funkopop.number}`;
+    searchText = searchText.replace(/\s/g, '%20');
+    searchText = searchText.replace(/\&/g, "");
+    let options = {
+        url: `${ebayCompletedBaseURL}${searchText}${ebayBaseURLending}1000${ebay_US_ONLY}${ebay_SoldItemsOnly}${ebay_SortByEndDate}`,
+        json: true
+    };
+    
+    rp(options).then((response) => {
+        let results = response.findCompletedItemsResponse[0].searchResult[0];
+        let count = results['@count'];
+        let items = results.item;
+        let salePrice = 0;
+
+        items.forEach((listing) =>{
+            salePrice += parseInt(listing.sellingStatus[0].convertedCurrentPrice[0].__value__);
+        });
+
+        let trendingValue = (salePrice / count).toFixed(2);
+        db.all(`UPDATE funkopop SET value = ?, last_update = ? WHERE funkopop.id = ?`, [trendingValue, currTimestamp, popId], (err, rows) =>{
             if(err){
+                console.log(`Unable to update value for: ${funkopop.series} ${funkopop.category} ${funkopop.name}`);
                 console.log(err);
-            }   else {
+            } else{
+                console.log("Value update success!");
 
-                rows.forEach((funkopop) => {
-
-                    let searchText = `Funko pop ${funkopop.name} ${funkopop.number}`;
-                    searchText = searchText.replace(/\s/g, '%20');
-                    let options = {
-                        url: `${ebayCompletedBaseURL}${searchText}${ebayBaseURLending}1000${ebay_US_ONLY}${ebay_SoldItemsOnly}${ebay_SortByEndDate}`,
-                        json: true
-                    };
-
-                    request(options, (error, response, body) => {
-                            if(error){
-                                console.log('error:', error); // Print the error if one occurred
-                            } else{
-                                console.log(body);
-
-                            }
-                    });
-                });
             }
         });
-}, 10000);
+
+        return;
+    }).catch(function (err) {
+        console.log(err);
+    });
+}
 
 //43200000
