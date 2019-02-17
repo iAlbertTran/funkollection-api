@@ -738,10 +738,13 @@ function updateTrendingValues(){
 }
 
 function queryEbay(funkopop, currTimestamp){
+
     let popId = funkopop.id;
+
     let searchText = `Funko pop ${funkopop.name} ${funkopop.number}`;
     searchText = searchText.replace(/\s/g, '%20');
     searchText = searchText.replace(/\&/g, "");
+
     let options = {
         url: `${ebayCompletedBaseURL}${searchText}${ebayBaseURLending}1000${ebay_US_ONLY}${ebay_SoldItemsOnly}${ebay_SortByEndDate}`,
         json: true
@@ -758,6 +761,7 @@ function queryEbay(funkopop, currTimestamp){
         });
 
         let trendingValue = (salePrice / count).toFixed(2);
+        
         db.all(`UPDATE funkopop SET value = ?, last_update = ? WHERE funkopop.id = ?`, [trendingValue, currTimestamp, popId], (err, rows) =>{
             if(err){
                 console.log(`Unable to update value for: ${funkopop.series} ${funkopop.category} ${funkopop.name}`);
