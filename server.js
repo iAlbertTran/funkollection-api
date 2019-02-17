@@ -707,6 +707,12 @@ function checkTokens(){
     }
 }
 
+setTimeout(() => {
+
+    updateTrendingValues();
+    
+}, 1000);
+
 setInterval(() => {
     updateTrendingValues();
 }, 60000 * 60 * 12);
