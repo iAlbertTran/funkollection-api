@@ -391,7 +391,6 @@ app.route('/api/funkopop/:username').get(
                 console.log(err);
                 res.status(400).send(JSON.stringify({ statusCode: 400, message: "Unable to get users Pop! Vinyls" }));
             }   else {
-                console.log(rows);
                 res.status(200).send(JSON.stringify({ statusCode: 200, seriesID: seriesID }));
             }
         })
